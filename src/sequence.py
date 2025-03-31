@@ -49,7 +49,7 @@ class AbstractSequence(abc.ABC):
         pass
 
 class DNASequence(AbstractSequence):
-      """
+    """
     Concrete implementation of AbstractSequence for DNA sequences.
 
     Attributes:
