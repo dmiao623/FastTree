@@ -11,8 +11,10 @@ class DNAConstants:
             [1, 1, 1, 0],
         ], dtype=int)
 
-    CORRECTION = lambda d : -0.75 * np.log(1 - (4/3)*d)
-    CORRECTION_LIMIT = 0.75
+    def CORRECTION(raw_dist: float) -> float:
+        if raw_dist >= 0.75:
+            return float("inf")
+        return -0.75 * np.log(1 - (4/3)*raw_dist)
 
 """
 [TODO]: Loads one of DNAConstants or ProteinConstants
@@ -20,4 +22,4 @@ class DNAConstants:
 
 UNSIMILARITY_MATRIX = DNAConstants.UNSIMILARITY_MATRIX
 
-CORRECTION = 
+CORRECTION = DNAConstants.CORRECTION
