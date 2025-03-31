@@ -4,6 +4,7 @@ from typing import TypeVar
 
 import constants
 from profile import Profile
+from sequence import Sequence
 
 Sequence = TypeVar("Sequence", bound=AbstractSequence)
 Node = Union[Sequence, Profile]
