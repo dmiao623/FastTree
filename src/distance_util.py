@@ -1,12 +1,11 @@
 import numpy as np
 
-from typing import TypeVar
+from typing import TypeVar, Union
 
 import constants
 from profile import Profile
 from sequence import Sequence
 
-Sequence = TypeVar("Sequence", bound=AbstractSequence)
 Node = Union[Sequence, Profile]
 
 def sequence_distance(s1: Sequence, s2: Sequence) -> float:
