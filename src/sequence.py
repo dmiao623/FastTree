@@ -55,3 +55,29 @@ class Sequence:
         return "".join([constants.ALPHABET[c] for c in self._sequence])
 
     def __iter__(self): return iter(self._sequence)
+
+def sequence_distance_uncorrected(s1: Sequence, s2: Sequence) -> float:
+    """Computes the distance between two biological sequences
+
+    Args:
+        s1 (AbstractSequence): the first sequence to compare
+        s2 (AbstractSequence): the second sequence to compare
+
+    Returns:
+        float: The distance between the two sequences.
+
+    Raises:
+        ValueError: Raised if provided sequences have different lengths.
+    """
+
+    if s1.sequence_length != s2.sequence_length:
+        raise ValueError("Sequences must be of the same length to compute distance.")
+    mismatches = np.sum(s1.sequence != s2.sequence)
+    raw_dist = mismatches / s1.sequence.size
+    return raw_dist
+
+def sequence_distance_corrected(s1: Sequence, s2: Sequence) -> float:
+    raw_dist = sequence_distance_uncorrected(s1, s2)
+    corrected_dist = constants.CORRECTION(raw_dist)
+    return corrected_dist
+
