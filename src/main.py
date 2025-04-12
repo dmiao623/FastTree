@@ -5,6 +5,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 from alignment import Alignment
+from nj import neighbor_joining
+import newick
 
 def main():
     parser = argparse.ArgumentParser(description="FastTree implemented in Python")
@@ -25,6 +27,10 @@ def main():
     alignment = Alignment(alignment_dict)
     logger.info(f"Profile matrices of {alignment.alignment_size} sequences "
         f"of length {alignment.alignment_length} successfully constructed")
+
+    tree = neighbor_joining(alignment.profile_dict)
+    with open('tree_nj.txt', 'w') as f:
+        newick.dump(tree, f)
 
 if __name__ == "__main__":
     main()

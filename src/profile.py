@@ -122,7 +122,7 @@ def profile_distance_uncorrected(p1: Profile, p2: Profile) -> float:
         for i in range(profile_length)],
     dtype=float)
     
-    column_weights = p1_mat.ungapped * p2_mat.ungapped
+    column_weights = p1.ungapped * p2.ungapped
 
     column_mask = column_weights > 0.0
     if not np.any(column_mask):
