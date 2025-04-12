@@ -1,4 +1,4 @@
-import constants.dna as DNAConstants
+import _constants.dna as DNAConstants
 
 """
 [TODO]: Loads one of DNAConstants or ProteinConstants
@@ -13,3 +13,5 @@ UNSIMILARITY_MATRIX = DNAConstants.UNSIMILARITY_MATRIX
 NUCLEIC_ACID_VECTORS = DNAConstants.NUCLEIC_ACID_VECTORS
 
 CORRECTION = DNAConstants.CORRECTION
+
+IS_GAP = DNAConstants.IS_GAP

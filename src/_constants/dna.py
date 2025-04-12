@@ -28,11 +28,16 @@ NUCLEIC_ACID_VECTORS = {
     'H' : utils.normalize(np.array([1, 1, 0, 1])),
     'V' : utils.normalize(np.array([1, 1, 1, 0])),
     'N' : utils.normalize(np.array([1, 1, 1, 1])),
-    '-' : utils.normalize(np.array([0, 0, 0, 0])),
-    '.' : utils.normalize(np.array([0, 0, 0, 0])),
+    # Note: it doesn't matter what the vectors of the gap positions are
+    # because when we do distance calculations, we never weight them
+    '-' : utils.normalize(np.array([1, 1, 1, 1])),
+    '.' : utils.normalize(np.array([1, 1, 1, 1])),
 }
 
-def CORRECTION(self, raw_dist: float) -> float:
+def CORRECTION(raw_dist: float) -> float:
     if raw_dist >= 0.75:
         return float("inf")
     return -0.75 * np.log(1 - (4/3)*raw_dist)
+
+def IS_GAP(c : str) -> bool:
+    return c in ['-', '.']

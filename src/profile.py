@@ -15,9 +15,7 @@ class Profile:
         profile (NDArray[NDArray[float]]): the profile matrix
         profile_length (int): the length of the profile
         num_sequences (int): the number of sequences stored
-
-    Note: because gaps are represented by the vector [0, 0, 0, 0],
-    the frequency of non-gaps can be calculated using np.sum(profile, axis=0).
+        ungapped (NDArray[float]): the proportion of non-gaps in each column
     """
 
     # TODO: fix __init__ and from_sequence methods
@@ -63,11 +61,14 @@ class Profile:
         """
         s_len = len(sequence)
         
-        profile = np.zeros((len(constants.ALPHABET), s_len), dtype=float)
+        profile = np.zeros((constants.ALPHALEN, s_len), dtype=float)
+        ungapped = np.zeros(s_len, dtype=float)
         
         for col_idx, char in enumerate(sequence):
             try:
                 profile[:, col_idx] = constants.NUCLEIC_ACID_VECTORS[char]
+                if not constants.IS_GAP(char):
+                    ungapped[col_idx] = 1
             except KeyError:
                 raise ValueError(f"Encountered unknown character: {char}")
 
@@ -75,6 +76,7 @@ class Profile:
         new_profile._profile = profile
         new_profile._profile_length = s_len
         new_profile._num_sequences = 1
+        new_profile._ungapped = ungapped
 
         return new_profile
 
@@ -86,6 +88,9 @@ class Profile:
 
     @property
     def num_sequences(self) -> int: return self._num_sequences
+
+    @property
+    def ungapped(self) -> int: return self._ungapped
 
 
 def profile_distance_uncorrected(p1: Profile, p2: Profile) -> float:
@@ -117,9 +122,7 @@ def profile_distance_uncorrected(p1: Profile, p2: Profile) -> float:
         for i in range(profile_length)],
     dtype=float)
     
-    p1_nongap = np.sum(p1_mat, axis=0)
-    p2_nongap = np.sum(p2_mat, axis=0)
-    column_weights = p1_nongap * p2_nongap
+    column_weights = p1_mat.ungapped * p2_mat.ungapped
 
     column_mask = column_weights > 0.0
     if not np.any(column_mask):
