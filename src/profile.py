@@ -1,9 +1,10 @@
 import numpy as np
 
 from numpy.typing import NDArray
+from typing import Union
 
 import constants
-#from alignment import Alignment
+from alignment import Alignment
 from sequence import Sequence
 from constants import ALPHALEN
 
@@ -18,40 +19,64 @@ class Profile:
         ungapped (NDArray[float]): the proportion of non-gaps in each column
     """
 
-    # TODO: fix __init__ and from_sequence methods
-    #def __init__(self, alignment: Alignment):
-    def __init__(self, alignment):
-        s_len = alignment.alignment_length
+    def __init__(self, alignment_or_sequence: Union[Alignment, Sequence, str]):
+        if isinstance(alignment_or_sequence, Alignment):
+            alignment = alignment_or_sequence
 
-        profile = np.zeros((ALPHALEN, s_len), dtype=float)
-        for i in range(ALPHALEN):
-            profile[i] = np.sum(alignment.alignment == i, axis=0)
-        non_gap_counts = np.sum(alignment.alignment != -1, axis=0)
-        with np.errstate(divide='ignore', invalid='ignore'):
-            profile = np.where(
-                non_gap_counts > 0,
-                profile / non_gap_counts,
-                0.0
-            )
+            s_len = alignment.alignment_length
+            profile = np.zeros((ALPHALEN, s_len), dtype=float)
+            for i in range(ALPHALEN):
+                profile[i] = np.sum(alignment.alignment == i, axis=0)
+            non_gap_counts = np.sum(alignment.alignment != -1, axis=0)
+            with np.errstate(divide='ignore', invalid='ignore'):
+                profile = np.where(
+                    non_gap_counts > 0,
+                    profile / non_gap_counts,
+                    0.0
+                )
 
-        self._profile = profile
-        self._profile_length = s_len
+            self._profile = profile
+            self._profile_length = s_len
 
-    @classmethod
-    def from_sequence(cls, sequence: Sequence) -> "Profile":
-        s_len = sequence.sequence_length
+        elif isinstance(alignment_or_sequence, Sequence):
+            sequence = alignment_or_sequence
+
+            s_len = sequence.sequence_length
+            profile = np.zeros((ALPHALEN, s_len), dtype=float)
+            
+            for col_idx, char_idx in enumerate(sequence):
+                if char_idx != -1:
+                    profile[char_idx, col_idx] = 1.0
+
+            self._profile = profile
+            self._profile_length = s_len
+
+        elif isinstance(alignment_or_sequence, str):
+            # edgar dijkstra rolling in his grave rn
+
+            sequence = alignment_or_sequence
+            s_len = len(sequence)
         
-        profile = np.zeros((ALPHALEN, s_len), dtype=float)
-        
-        for col_idx, char_idx in enumerate(sequence):
-            if char_idx != -1:
-                profile[char_idx, col_idx] = 1.0
+            profile = np.zeros((constants.ALPHALEN, s_len), dtype=float)
+            ungapped = np.zeros(s_len, dtype=float)
+            
+            for col_idx, char in enumerate(sequence):
+                try:
+                    profile[:, col_idx] = constants.NUCLEIC_ACID_VECTORS[char]
+                    if not constants.IS_GAP(char):
+                        ungapped[col_idx] = 1
+                except KeyError:
+                    raise ValueError(f"Encountered unknown character: {char}")
 
-        new_profile = cls.__new__(cls)
-        new_profile._profile = profile
-        new_profile._profile_length = s_len
+            new_profile = cls.__new__(cls)
+            new_profile._profile = profile
+            new_profile._profile_length = s_len
+            new_profile._num_sequences = 1
+            new_profile._ungapped = ungapped
 
-        return new_profile
+            return new_profile
+
+
 
     @classmethod
     def from_aligned_sequence(cls, sequence: str) -> "Profile":
@@ -59,26 +84,6 @@ class Profile:
         Takes as input a sequence that may have gaps and non-ACGT characters
         and returns the corresponding profile.
         """
-        s_len = len(sequence)
-        
-        profile = np.zeros((constants.ALPHALEN, s_len), dtype=float)
-        ungapped = np.zeros(s_len, dtype=float)
-        
-        for col_idx, char in enumerate(sequence):
-            try:
-                profile[:, col_idx] = constants.NUCLEIC_ACID_VECTORS[char]
-                if not constants.IS_GAP(char):
-                    ungapped[col_idx] = 1
-            except KeyError:
-                raise ValueError(f"Encountered unknown character: {char}")
-
-        new_profile = cls.__new__(cls)
-        new_profile._profile = profile
-        new_profile._profile_length = s_len
-        new_profile._num_sequences = 1
-        new_profile._ungapped = ungapped
-
-        return new_profile
 
     @property
     def profile(self) -> NDArray[float]: return self._profile
