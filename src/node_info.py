@@ -6,14 +6,14 @@ from typing import Optional, Tuple, Union
 from profile import Profile, profile_distance_uncorrected
 from sequence import Sequence, sequence_distance_uncorrected
 
-class Node:
+class NodeInfo:
     def __init__(
             self,
             sequence_or_profile: Union[Sequence, Profile],
             up_distance: float = 0.0,
             variance: float = 0.0,
-            left_child: Optional[Tuple[float, "Node"]] = None,
-            right_child: Optional[Tuple[float, "Node"]] = None,
+            left_child: Optional[Tuple[float, "NodeInfo"]] = None,
+            right_child: Optional[Tuple[float, "NodeInfo"]] = None,
         ):
         
         if isinstance(sequence_or_profile, Sequence):
@@ -52,14 +52,14 @@ class Node:
     @property
     def variance(self) -> float: return self._variance
 
-def node_distance(n1: Node, n2: Node) -> float:
+def nodeinfo_distance(n1: NodeInfo, n2: NodeInfo) -> float:
     """Computes the distance between two nodes.
 
     A node can be either a Sequence (leaf) or a Profile (internal node).
 
     Args:
-        n1 (Node): the first node to compare
-        n2 (Node): the second node to compare
+        n1 (NodeInfo): the first node to compare
+        n2 (NodeInfo): the second node to compare
 
     Returns:
         float: The correct distance between the two nodes.
@@ -76,9 +76,9 @@ def node_distance(n1: Node, n2: Node) -> float:
 
     return delta - n1.up_distance - n2.up_distance
 
-def node_join(n1: Node, n2: Node, d: Optional[float] = None) -> Node:
+def nodeinfo_join(n1: NodeInfo, n2: NodeInfo, d: Optional[float] = None) -> NodeInfo:
     if d is None:
-        d = node_distance(n1, n2)
+        d = nodeinfo_distance(n1, n2)
     v1 = n1.variance
     v2 = n2.variance
 
@@ -101,4 +101,4 @@ def node_join(n1: Node, n2: Node, d: Optional[float] = None) -> Node:
     p_mat = p1.profile * w_left + p2.profile * w_right
     p = Profile(p_mat)
 
-    return Node(p, up_distance, variance, (left_dist, v1), (right_dist, v2))
+    return NodeInfo(p, up_distance, variance, (left_dist, v1), (right_dist, v2))
