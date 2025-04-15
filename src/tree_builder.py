@@ -10,8 +10,81 @@ from typing import List, Optional, Set, Tuple
 NodeID = int
 
 class TreeBuilder:
+    """Constructs a phylogenetic tree using the FastTree algorithm.
+
+    Attributes:
+
+        _num_sequences (int): The number of input sequences.
+
+        _tophits_threshold (int): The threshold factor (approximately sqrt(num_sequences))that 
+            limits candidate join nodes.
+
+        _refresh_interval (int): The interval (in steps) at which top hits are recomputed.
+
+        _distance_cache (List[List[float]]): A triangular cache storing pairwise distances between
+            nodes.
+
+        _nodes (List[TreeBuilder.Node]): List containing all nodes (both initial and merged) in the
+            tree.
+
+        _num_nodes (int): The total number of nodes (original sequences + merged nodes).
+
+        _active_ids (Set[int]): Set of active node IDs that have not yet been merged.
+
+        _steps (int): Counter for the number of join steps executed.
+
+        _union_find (UnionFind): Union-find data structure used to efficiently manage node
+            groupings during merges.
+        
+    Args:
+
+        sequences (List[Sequence]): The list of sequences used to construct the tree.
+
+        thresh_cp (int, optional): A multiplier used to compute the top-hit threshold. Higher
+            factor is safer but slower. Defaults to 2.
+
+        refresh_interval (Optional[int], optional): The interval for refreshing top-hit candidates.
+            If not provided, no refreshes will be performed.
+    """
 
     class Node:
+        """Internal representation of a tree node in TreeBuilder.
+
+        This class encapsulates node information including its unique identifier, associated 
+        NodeInfo, top-hit candidate nodes, and optional pointers to its left and right child nodes
+        resulting from a merge.
+
+        Attributes:
+
+            _id (int): Unique identifier for the node.
+
+            _node_info (NodeInfo): Associated NodeInfo that holds sequence/profile and distance
+                data.
+
+            tophit_ids (Set[int]): Set of node IDs that are considered top-hit candidates for
+                potential merging.
+
+            _leftchild_id (Optional[int]): Node ID of the left child after a node join.
+
+            _rightchild_id (Optional[int]): Node ID of the right child after a node join.
+
+        Args:
+
+            id (int): Unique identifier for the node.
+
+            node_info (NodeInfo): The NodeInfo instance containing sequence/profile and distance
+                information.
+
+            tophit_ids (Optional[Set[int]], optional): A set of candidate node IDs for joining.
+                Defaults to an empty set.
+
+            leftchild_id (Optional[int], optional): Identifier for the left child node if it exists.
+
+            rightchild_id (Optional[int], optional): Identifier for the right child node if it
+                exists.
+
+        """
+
         def __init__(self,
                      id: int,
                      node_info: NodeInfo,
@@ -74,6 +147,19 @@ class TreeBuilder:
         self._union_find = UnionFind(2*self._num_sequences)
 
     def _distance_util(self, nd_id1: NodeID, nd_id2: NodeID):
+        """Computes distance between two nodes identified by their IDs. Uses a cached distance
+        matrix to avoid redundant computations.
+
+        Parameters:
+
+            nd_id1 (NodeID): Identifier of the first node.
+
+            nd_id2 (NodeID): Identifier of the second node.
+
+        Returns:
+            float: The computed or cached distance between the two nodes.
+        """
+
         nd_id1, nd_id2 = min(nd_id1, nd_id2), max(nd_id1, nd_id2)
         if self._distance_cache[nd_id1][nd_id2] == -1:
             distance = nodeinfo_distance(self._nodes[nd_id1].node_info,
@@ -82,6 +168,16 @@ class TreeBuilder:
         return self._distance_cache[nd_id1][nd_id2]
 
     def _node_join(self, nd_id1: NodeID, nd_id2: NodeID):
+        """Joins two active nodes into a new parent node. The parent node is set to be active
+        and the two provided nodes are set to be children.
+
+        Parameters:
+
+            nd_id1 (NodeID): Identifier of the first node to be merged.
+
+            nd_id2 (NodeID): Identifier of the second node to be merged.
+        """
+
         assert nd_id1 in self._active_ids
         assert nd_id2 in self._active_ids
 
@@ -110,6 +206,9 @@ class TreeBuilder:
         self._nodes.append(TreeBuilder.Node(id, node_info, set(tophit_ids), nd_id1, nd_id2))
 
     def _recompute_tophits(self):
+        """Recomputes the top-hit candidate set for every active node.
+        """
+
         for nd_id1 in self._active_ids:
             sorted_node_ids = sorted(list(self._active_ids),
                                      key=lambda nd_id2: self._distance_util(nd_id1, nd_id2))
@@ -118,6 +217,18 @@ class TreeBuilder:
             self._nodes[nd_id1].tophit_ids = set(tophit_ids)
     
     def step(self):
+        """Executes a single step of the tree-building process.
+
+        In each step the algorithm:
+          - Evaluates candidate joining pairs based on the current top-hit sets.
+          - Determines the best pair to join (the pair with the smallest distance).
+          - Merges the chosen pair into a new node.
+          - Periodically refreshes the top-hit candidate sets based on the refresh interval.
+
+        Side Effects:
+            Updates internal state including _active_ids, _nodes, _steps, _distance_cache, and _union_find.
+        """
+
         self._step += 1
 
         candidate_join_ids = []
@@ -143,6 +254,17 @@ class TreeBuilder:
             self._recompute_tophits()
 
     def export_tree(self) -> List[List[Tuple[int, float]]]:
+        """Exports the constructed tree as an adjacency list with corrected branch distances.
+
+        The tree is represented as a list of lists. Each list index corresponds to a node in the 
+        tree, and each element in the sublist is a tuple (child_node_id, corrected_distance).
+        Nodes corresponding to the original sequences have ids in the range [0, n).
+
+        Returns:
+            List[List[Tuple[int, float]]]: The final adjacency list representation of the
+                phylogenetic tree.
+        """
+
         assert len(self._active_ids) == 1
 
         tree_adj = [[] for _ in range(self._num_nodes)]
@@ -160,6 +282,13 @@ class TreeBuilder:
 
 
     def build(self):
+        """Executes the full tree-building process.
+
+        Returns:
+            List[List[Tuple[int, float]]]: The final adjacency list representation of the
+                phylogenetic tree.
+        """
+
         for _ in range(self._num_sequences):
             self.step()
         return self.export_tree()

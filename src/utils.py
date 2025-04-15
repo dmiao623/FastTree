@@ -19,5 +19,4 @@ class UnionFind:
         x, y = self.find(x), self.find(y)
         if x == y:
             return
-        # sleator in shambles
         self._parent[y] = x

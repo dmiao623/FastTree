@@ -1,10 +1,12 @@
-from typing import List, Dict, TypeVar
+from typing import Dict
 
 from profile import Profile
 
 class Alignment:
     """
     An alignment of DNA sequences.
+
+    [ToDo]: is this class even necessary?
 
     Properties:
         alignment (Dict[str, str]): a dictionary with the multiple alignment;

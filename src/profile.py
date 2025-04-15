@@ -9,13 +9,18 @@ from sequence import Sequence
 from constants import ALPHALEN
 
 class Profile:
-    """
-    A class representing a profile matrix.
+    """A class representing a profile matrix.
+
+    [ToDo]: Update documentation and class clarification.
 
     Properties:
+
         profile (NDArray[NDArray[float]]): the profile matrix
+
         profile_length (int): the length of the profile
+
         num_sequences (int): the number of sequences stored
+
         ungapped (NDArray[float]): the proportion of non-gaps in each column
     """
 
@@ -68,22 +73,15 @@ class Profile:
                 except KeyError:
                     raise ValueError(f"Encountered unknown character: {char}")
 
-            new_profile = cls.__new__(cls)
-            new_profile._profile = profile
-            new_profile._profile_length = s_len
-            new_profile._num_sequences = 1
-            new_profile._ungapped = ungapped
+            self._profile = profile
+            self._profile_length = s_len
+            self._num_sequences = 1
+            self._ungapped = ungapped
 
-            return new_profile
+        # [ToDo]: Fix Me!
+        self._num_sequences = 0
+        self._ungapped = np.zeros(s_len, dtype=float)
 
-
-
-    @classmethod
-    def from_aligned_sequence(cls, sequence: str) -> "Profile":
-        """
-        Takes as input a sequence that may have gaps and non-ACGT characters
-        and returns the corresponding profile.
-        """
 
     @property
     def profile(self) -> NDArray[float]: return self._profile
@@ -95,7 +93,7 @@ class Profile:
     def num_sequences(self) -> int: return self._num_sequences
 
     @property
-    def ungapped(self) -> int: return self._ungapped
+    def ungapped(self) -> NDArray[float]: return self._ungapped
 
 
 def profile_distance_uncorrected(p1: Profile, p2: Profile) -> float:
@@ -104,19 +102,19 @@ def profile_distance_uncorrected(p1: Profile, p2: Profile) -> float:
     Specifically, profile distance is calculated by
       1. Summing the position-wise dissimilarity
       2. Weighting by the fraction of non-gapped position in each profile
-      3. Applies a correction to compensate for hidden substitutions
     
     [ToDo]: add eigendecomposition optimization
 
     Args:
-        p1 (Profile): the first profile to compare
-        p2 (Profile): the second profile to compare
+
+        p1 (Profile): The first profile to compare.
+
+        p2 (Profile): The second profile to compare.
 
     Returns:
         float: The corrected distance between the two profiles.
                - If all columns are gapped (no overlap), returns 0.0.
-               - If the raw distance is at or beyond a model limit, returns float('inf').
-
+               - If the raw distance is at or beyond a model limit, returns float("inf").
     """
 
     p1_mat, p2_mat = p1.profile, p2.profile
@@ -141,6 +139,25 @@ def profile_distance_uncorrected(p1: Profile, p2: Profile) -> float:
 
 
 def profile_distance_corrected(p1: Profile, p2: Profile) -> float:
+    """Computes the corrected distance between two profiles.
+
+    Specifically, profile distance is calculated by
+      1. Summing the position-wise dissimilarity
+      2. Weighting by the fraction of non-gapped position in each profile
+      3. Applies a correction to compensate for hidden substitutions
+
+    Args:
+
+        p1 (Profile): The first profile to compare.
+
+        p2 (Profile): The second profile to compare.
+
+    Returns:
+        float: The corrected distance between the two profiles.
+               - If all columns are gapped (no overlap), returns 0.0.
+               - If the raw distance is at or beyond a model limit, returns float("inf").
+    """
+
     raw_dist = profile_distance_uncorrected(p1, p2)
     corrected_dist = constants.CORRECTION(raw_dist)
     return corrected_dist
