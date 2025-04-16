@@ -2,7 +2,7 @@ import numpy as np
 
 from typing import Optional, Union
 
-from profile import Profile, profile_distance_uncorrected
+from profile import Profile, profile_distance_uncorrected, profile_weighted_join
 from sequence import Sequence, sequence_distance_uncorrected
 
 class NodeInfo:
@@ -20,6 +20,8 @@ class NodeInfo:
         _variance (float): The variance associated with this node; typically computed during tree
             construction.
 
+        _label (Optional[str]): The label associated with this node.
+
     Args:
 
         sequence_or_profile (Union[Sequence, Profile]): The input value, which determines whether 
@@ -35,6 +37,7 @@ class NodeInfo:
             sequence_or_profile: Union[Sequence, Profile],
             up_distance: float = 0.0,
             variance: float = 0.0,
+            label: Optional[str] = None,
         ):
         
         if isinstance(sequence_or_profile, Sequence):
@@ -46,6 +49,7 @@ class NodeInfo:
 
         self._up_distance = up_distance
         self._variance = variance
+        self._label = label
 
     @property
     def sequence(self) -> Optional[Sequence]: return self._sequence
@@ -58,6 +62,9 @@ class NodeInfo:
 
     @property
     def variance(self) -> float: return self._variance
+
+    @property
+    def label(self) -> Optional[str]: return self._label
 
 def nodeinfo_distance(n1: NodeInfo, n2: NodeInfo) -> float:
     """Computes the distance between two NodeInfos.
@@ -76,9 +83,9 @@ def nodeinfo_distance(n1: NodeInfo, n2: NodeInfo) -> float:
         delta = sequence_distance_uncorrected(n1.sequence, n2.sequence)
     else:
         p1 = (n1.profile if n1.profile is not None 
-                else Profile(n1.sequence))
+                else Profile.from_aligned_sequence(n1.sequence))
         p2 = (n2.profile if n2.profile is not None 
-                else Profile(n2.sequence))
+                else Profile.from_aligned_sequence(n2.sequence))
         delta = profile_distance_uncorrected(p1, p2)
 
     return delta - n1.up_distance - n2.up_distance
@@ -116,11 +123,9 @@ def nodeinfo_join(n1: NodeInfo, n2: NodeInfo, d: Optional[float] = None) -> Node
     w_left = left_dist / d
     w_right = right_dist / d
     p1 = (n1.profile if n1.profile is not None 
-            else Profile(n1.sequence))
+            else Profile.from_aligned_sequence(n1.sequence))
     p2 = (n2.profile if n2.profile is not None 
-            else Profile(n2.sequence))   
+            else Profile.from_aligned_sequence(n2.sequence))   
 
-    p_mat = p1.profile * w_left + p2.profile * w_right
-    p = Profile(p_mat)
-
-    return NodeInfo(p, up_distance, variance, (left_dist, v1), (right_dist, v2))
+    p = profile_weighted_join(p1, p2, w_left, w_right)
+    return NodeInfo(p, up_distance, variance)

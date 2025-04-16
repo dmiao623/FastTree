@@ -5,7 +5,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 from alignment import Alignment
-from nj import neighbor_joining
+from tree_builder import TreeBuilder
+from math import isqrt
 import newick
 
 def main():
@@ -28,9 +29,11 @@ def main():
     logger.info(f"Profile matrices of {alignment.alignment_size} sequences "
         f"of length {alignment.alignment_length} successfully constructed")
 
-    tree = neighbor_joining(alignment.profile_dict)
-    with open('tree_nj.txt', 'w') as f:
-        newick.dump(tree, f)
+    tree_builder = TreeBuilder(alignment,
+                               refresh_interval=isqrt(alignment.alignment_size))
+    tree_builder.build()
+    with open('tree_custom_fasttree.txt', 'w') as f:
+        newick.dump(tree_builder.export_tree(), f)
 
 if __name__ == "__main__":
     main()

@@ -4,8 +4,6 @@ from numpy.typing import NDArray
 from typing import Union
 
 import constants
-from alignment import Alignment
-from sequence import Sequence
 from constants import ALPHALEN
 
 class Profile:
@@ -24,64 +22,28 @@ class Profile:
         ungapped (NDArray[float]): the proportion of non-gaps in each column
     """
 
-    def __init__(self, alignment_or_sequence: Union[Alignment, Sequence, str]):
-        if isinstance(alignment_or_sequence, Alignment):
-            alignment = alignment_or_sequence
+    def __init__(self, p_mat: NDArray[NDArray[float]], num_sequences: int, ungapped: NDArray[float]):
+        self._profile = p_mat
+        self._profile_length = len(p_mat[0])
+        self._num_sequences = num_sequences
+        self._ungapped = ungapped
 
-            s_len = alignment.alignment_length
-            profile = np.zeros((ALPHALEN, s_len), dtype=float)
-            for i in range(ALPHALEN):
-                profile[i] = np.sum(alignment.alignment == i, axis=0)
-            non_gap_counts = np.sum(alignment.alignment != -1, axis=0)
-            with np.errstate(divide='ignore', invalid='ignore'):
-                profile = np.where(
-                    non_gap_counts > 0,
-                    profile / non_gap_counts,
-                    0.0
-                )
-
-            self._profile = profile
-            self._profile_length = s_len
-
-        elif isinstance(alignment_or_sequence, Sequence):
-            sequence = alignment_or_sequence
-
-            s_len = sequence.sequence_length
-            profile = np.zeros((ALPHALEN, s_len), dtype=float)
-            
-            for col_idx, char_idx in enumerate(sequence):
-                if char_idx != -1:
-                    profile[char_idx, col_idx] = 1.0
-
-            self._profile = profile
-            self._profile_length = s_len
-
-        elif isinstance(alignment_or_sequence, str):
-            # edgar dijkstra rolling in his grave rn
-
-            sequence = alignment_or_sequence
-            s_len = len(sequence)
+    @classmethod
+    def from_aligned_sequence(self, aligned_seq: str):
+        s_len = len(aligned_seq)
+    
+        profile = np.zeros((constants.ALPHALEN, s_len), dtype=float)
+        ungapped = np.zeros(s_len, dtype=float)
         
-            profile = np.zeros((constants.ALPHALEN, s_len), dtype=float)
-            ungapped = np.zeros(s_len, dtype=float)
-            
-            for col_idx, char in enumerate(sequence):
-                try:
-                    profile[:, col_idx] = constants.NUCLEIC_ACID_VECTORS[char]
-                    if not constants.IS_GAP(char):
-                        ungapped[col_idx] = 1
-                except KeyError:
-                    raise ValueError(f"Encountered unknown character: {char}")
+        for col_idx, char in enumerate(aligned_seq):
+            try:
+                profile[:, col_idx] = constants.NUCLEIC_ACID_VECTORS[char]
+                if not constants.IS_GAP(char):
+                    ungapped[col_idx] = 1
+            except KeyError:
+                raise ValueError(f"Encountered unknown character: {char}")
 
-            self._profile = profile
-            self._profile_length = s_len
-            self._num_sequences = 1
-            self._ungapped = ungapped
-
-        # [ToDo]: Fix Me!
-        self._num_sequences = 0
-        self._ungapped = np.zeros(s_len, dtype=float)
-
+        return Profile(profile, 1, ungapped)
 
     @property
     def profile(self) -> NDArray[float]: return self._profile
@@ -161,3 +123,23 @@ def profile_distance_corrected(p1: Profile, p2: Profile) -> float:
     raw_dist = profile_distance_uncorrected(p1, p2)
     corrected_dist = constants.CORRECTION(raw_dist)
     return corrected_dist
+
+def profile_weighted_join(p1: Profile, p2: Profile, w1: float, w2: float) -> Profile:
+    """
+    Compute the profile formed by joining profiles p1 and p2 with weights w1 and w2.
+    """
+    if w1 == 0. and w2 == 0.:
+        w1, w2 = 1., 1.
+    freq_mat_1 = p1.profile * p1.ungapped * p1.num_sequences
+    freq_mat_2 = p2.profile * p2.ungapped * p2.num_sequences
+    freq_mat_weighted = freq_mat_1 * w1 + freq_mat_2 * w2
+    counts = np.sum(freq_mat_weighted, axis=0)
+    new_p_mat = np.divide(freq_mat_weighted,
+                          counts,
+                          out=(0.25 * np.ones_like(freq_mat_weighted)),
+                          where=(counts != 0))
+    new_ungapped = counts / (p1.num_sequences * w1 + p2.num_sequences * w2)
+
+    return Profile(new_p_mat,
+                   p1.num_sequences + p2.num_sequences,
+                   new_ungapped)
