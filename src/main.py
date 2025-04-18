@@ -6,14 +6,23 @@ logging.basicConfig(level=logging.DEBUG)
 
 from alignment import Alignment
 from tree_builder import TreeBuilder
+from benchmarks.neighbor_joining import neighbor_joining
 from math import isqrt
 import newick
 
 def main():
     parser = argparse.ArgumentParser(description="FastTree implemented in Python")
+    parser.add_argument("--algo",
+                        type=str,
+                        help="the algorithm used to construct the tree",
+                        required=True,
+                        choices=["nj", "slowtree"])
     parser.add_argument("input_file",
-                        type=argparse.FileType('r'),
+                        type=argparse.FileType("r"),
                         help="the aligned nucleotide sequences in fasta format")
+    parser.add_argument("output_file",
+                        type=argparse.FileType("w"),
+                        help="the file to output the tree to")
 
     args = parser.parse_args()
     logger.info(f"Loading fasta file: {args.input_file.name}")
@@ -29,11 +38,12 @@ def main():
     logger.info(f"Profile matrices of {alignment.alignment_size} sequences "
         f"of length {alignment.alignment_length} successfully constructed")
 
-    tree_builder = TreeBuilder(alignment,
-                               refresh_interval=isqrt(alignment.alignment_size))
-    tree_builder.build()
-    with open('tree_custom_fasttree.txt', 'w') as f:
-        newick.dump(tree_builder.export_tree(), f)
+    if args.algo == "nj":
+        newick.dump(neighbor_joining(alignment), args.output_file)
+    else:
+        tree_builder = TreeBuilder(alignment,
+                                   refresh_interval=isqrt(alignment.alignment_size))
+        newick.dump(tree_builder.build(), args.output_file)
 
 if __name__ == "__main__":
     main()

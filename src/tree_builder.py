@@ -221,10 +221,8 @@ class TreeBuilder:
     def _recompute_tophits(self):
         """Recomputes the top-hit candidate set for every active node.
         """
-
-
         # for nd_id in self._active_ids:
-        #     self._compute_single_tophits_list(nd_id)
+        #    self._compute_single_tophits_list(nd_id)
     
     def step(self):
         """Executes a single step of the tree-building process.
@@ -275,6 +273,7 @@ class TreeBuilder:
             newick.Node: A newick.Node representing the final phylogenetic tree.
         """
 
+        logging.info("Exporting constructed tree")
         assert len(self._active_ids) == 1
         last_remaining = next(iter(self._active_ids))
 

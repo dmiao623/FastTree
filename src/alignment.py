@@ -13,7 +13,7 @@ class Alignment:
             the labels of the sequences are the keys, the sequences are the values
         alignment_size (int): how many sequences are aligned
         alignment_length (int): the length of the aligned sequences
-        profile_dict (Dict[str, str]): a dictionary with the profile for each sequence
+        profile_dict (Dict[str, Profile]): a dictionary with the profile for each sequence
     """
     def __init__(self, alignment: Dict[str, str]):
         """

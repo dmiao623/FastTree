@@ -1,32 +1,32 @@
 import newick
-from profile import Profile, profile_distance_uncorrected
+from profile import profile_distance_uncorrected
+from alignment import Alignment
 from typing import Dict
 
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-def neighbor_joining(profiles: Dict[str, Profile]) -> newick.Node:
+def neighbor_joining(alignment: Alignment) -> newick.Node:
     """
     Run the neighbor-joining algorithm, with no optimization, on the given
-    profile dictionary. (We compute the distance matrix in O(N^2L) time,
-    then we calculate each of the N-2 joins in O(N^2) time, for a total
-    time complexity of O(N^2(N+L).)
+    alignment. (We compute the distance matrix in O(N^2L) time, then we
+    calculate each of the N-2 joins in O(N^2) time, for a total time complexity
+    of O(N^2(N+L).)
 
     Args:
-        profiles (Dict[str, str]): a dictionary where the keys are the labels
-            of the sequences, and the values are the profiles
+        alignment (Alignment): a multiple alignment containing the sequences
 
     Returns:
         newick.Node: a tree, the output of the neighbor-joining algorithm
     """
 
     # For efficiency, we'll replace all the labels with ints.
+    profiles = alignment.profile_dict
     labels = list(profiles.keys())
     N = len(labels)
-    if N == 0:
-        raise ValueError("Cannot run neighbor-joining on an empty dict")
-    elif N == 1:
+    assert N > 0
+    if N == 1:
         return newick.Node(labels[0])
 
     # First, construct the distance matrix (which will be stored as

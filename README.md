@@ -26,7 +26,23 @@ pip install newick
 
 ### Usage
 
-[ToDo]
+First, obtain a multiple alignment of nucleotide sequences in FASTA file format. For example, [a multiple alignment of 16S ribosomal rRNA from the greengenes database](https://greengenes.lbl.gov/Download/Sequence_Data/Fasta_data_files/core_set_aligned.fasta).
+
+If desired, run the `sampler.py` script to obtain a smaller subset of this dataset for testing. For example,
+```
+python src/sampler.py -n 100 core_set_aligned.fasta sampled_core_set.fasta
+```
+
+To run the actual algorithm, type
+```
+python src/main.py --algo slowtree sampled_core_set.fasta tree.txt
+```
+This will run the SlowTree algorithm on the sequences in `sampled_core_set.fasta` and output the resulting tree in [Newick format](https://en.wikipedia.org/wiki/Newick_format) to `tree.txt`.
+
+For more usage options, type
+```
+python src/main.py -h
+```
 
 ### References
 
