@@ -96,14 +96,18 @@ class TreeBuilder:
                      node_info: NodeInfo,
                      tophit_ids: Optional[Set[int]]=None,
                      leftchild_id: Optional[int]=None,
-                     rightchild_id: Optional[int]=None):
+                     leftchild_dist: Optional[int]=None,
+                     rightchild_id: Optional[int]=None,
+                     rightchild_dist: Optional[int]=None):
             self._id = id
             self._node_info = node_info
 
             self.tophit_ids = tophit_ids if tophit_ids else set()
 
             self._leftchild_id = leftchild_id
+            self._leftchild_dist = leftchild_dist
             self._rightchild_id = rightchild_id
+            self._rightchild_dist = rightchild_dist
 
         @property
         def id(self) -> int: return self._id
@@ -140,6 +144,22 @@ class TreeBuilder:
         self._num_nodes = self._num_sequences
         self._active_ids = set(range(self._num_sequences))
         self._recompute_tophits()
+
+        ### initialize variance
+
+        leafVarSum, leafVarCnt = [0.0] * self._num_sequences, [0] * self._num_sequences
+        for nd_id1 in self._active_ids:
+            for nd_id2 in self._nodes[nd_id1].tophit_ids:
+                raw_dist = self._distance_util(nd_id1, nd_id2)
+                dist = CORRECTION(raw_dist)
+                variance = math.exp(8.*dist/3.) * raw_dist*(1.-raw_dist) / alignment._alignment_length
+
+                leafVarSum[nd_id1] += variance
+                leafVarCnt[nd_id1]+= 1
+                leafVarSum[nd_id2] += variance
+                leafVarCnt[nd_id2]+= 1
+        for nd_id in self._active_ids:
+            self._nodes[nd_id].node_info.set_variance(leafVarSum[nd_id] / leafVarCnt[nd_id])
 
         self._steps = 0
         self._union_find = UnionFind(2*self._num_sequences)
@@ -189,7 +209,7 @@ class TreeBuilder:
         self._distance_cache.append([-1] * self._num_nodes)
         self._num_nodes += 1
 
-        node_info = nodeinfo_join(nd1.node_info, nd2.node_info)
+        node_info, leftchild_dist, rightchild_dist = nodeinfo_join(nd1.node_info, nd2.node_info)
         self._union_find.union(id, nd_id1)
         self._union_find.union(id, nd_id2)
 
@@ -199,14 +219,16 @@ class TreeBuilder:
                     if nd_id != id
         ]
         potential_tophit_ids = list(set(potential_tophit_ids))
-        self._nodes.append(TreeBuilder.Node(id, node_info, set(), nd_id1, nd_id2))
+        self._nodes.append(TreeBuilder.Node(id, node_info, set(),
+                                            nd_id1, leftchild_dist,
+                                            nd_id2, rightchild_dist))
         self._compute_single_tophits_list(id, potential_tophit_ids)
 
         self._active_ids.add(id)
         self._active_ids.remove(nd_id1)
         self._active_ids.remove(nd_id2)
 
-    def _compute_single_tophits_list(self, nd_id: NodeID, candidates=None):
+    def _compute_single_tophits_list(self, nd_id: NodeID, candidates: Optional[List[NodeID]]=None) -> List[int]:
         """Compute the top-hits list of a single node.
         """
         logging.info(f"Computing top-hits list of node {nd_id}")
@@ -216,13 +238,30 @@ class TreeBuilder:
                                  key=lambda j: self._distance_util(nd_id, j))
         assert sorted_node_ids[0] == nd_id
         tophits = sorted_node_ids[1:self._tophits_threshold+1]
-        self._nodes[nd_id].tophit_ids = set(tophits)
+        return tophits
 
     def _recompute_tophits(self):
         """Recomputes the top-hit candidate set for every active node.
         """
-        # for nd_id in self._active_ids:
-        #    self._compute_single_tophits_list(nd_id)
+
+        if self._enable_tophits_approx:
+            computed = set()
+            for nd_id1 in self._active_ids:
+                if nd_id1 in computed:
+                    continue
+                computed.add(nd_id1)
+                tophits = self._compute_single_tophits_list(nd_id1)
+                self._nodes[nd_id1].tophit_ids = set(tophits)
+                for nd_id2 in tophits:
+                    if nd_id2 not in computed:
+                        tophits_tmp = set(tophits)
+                        tophits_tmp.remove(nd_id2)
+                        tophits_tmp.add(nd_id1)
+                        self._nodes[nd_id2].tophit_ids = tophits_tmp
+                        computed.add(nd_id2)
+        else:
+            for nd_id in self._active_ids:
+                self._nodes[nd_id].tophit_ids = set(self._compute_single_tophits_list(nd_id))
     
     def step(self):
         """Executes a single step of the tree-building process.
@@ -281,13 +320,13 @@ class TreeBuilder:
         
         def dfs_help(nd_id: NodeID):
             nd = self._nodes[nd_id]
-            for child_id in [nd.leftchild_id, nd.rightchild_id]:
+            for child_id, raw_dist in [(nd.leftchild_id, nd.leftchild_dist),
+                                   (nd.rightchild_id, nd.rightchild_dist)]:
                 if child_id is None:
                     continue
-                raw_dist = self._distance_util(nd_id, child_id)
-                distance = CORRECTION(raw_dist)
+                dist = CORRECTION(raw_dist)
                 dfs_help(child_id)
-                newick_nodes[child_id].length = distance
+                newick_nodes[child_id].length = dist
                 newick_nodes[nd_id].add_descendant(newick_nodes[child_id])
         dfs_help(last_remaining)
         return newick_nodes[last_remaining]
