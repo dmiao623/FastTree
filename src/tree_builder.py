@@ -100,7 +100,6 @@ class TreeBuilder:
             self._id = id
             self._node_info = node_info
 
-            # bad practice but I'm tired >:)
             self.tophit_ids = tophit_ids if tophit_ids else set()
 
             self._leftchild_id = leftchild_id
@@ -121,11 +120,13 @@ class TreeBuilder:
     def __init__(self,
                  alignment: Alignment,
                  thresh_cp: int=2,
-                 refresh_interval: Optional[int]=None):
+                 refresh_interval: Optional[int]=None,
+                 enable_tophits_approx=True):
         logging.info("Initializing tree builder")
         self._num_sequences = alignment.alignment_size
         self._tophits_threshold = thresh_cp*math.isqrt(self._num_sequences)
         self._refresh_interval = refresh_interval if refresh_interval else 2*self._num_sequences
+        self._enable_tophits_approx = enable_tophits_approx
 
         node_infos = [NodeInfo(profile, label=label) for label, profile in alignment.profile_dict.items()]
         self._distance_cache = [
@@ -221,8 +222,9 @@ class TreeBuilder:
         """Recomputes the top-hit candidate set for every active node.
         """
 
-        for nd_id in self._active_ids:
-            self._compute_single_tophits_list(nd_id)
+
+        # for nd_id in self._active_ids:
+        #     self._compute_single_tophits_list(nd_id)
     
     def step(self):
         """Executes a single step of the tree-building process.

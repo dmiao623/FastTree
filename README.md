@@ -21,6 +21,7 @@ Add required packages:
 
 ```
 pip install numpy
+pip install newick
 ```
 
 ### Usage
