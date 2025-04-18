@@ -3,7 +3,7 @@ import numpy as np
 from typing import Union
 from numpy.typing import NDArray
 
-from constants import CORRECTION
+from constants import ALPHABET, CORRECTION
 
 class Sequence:
     """Class representing a generic biological sequence.
@@ -29,13 +29,13 @@ class Sequence:
 
         if isinstance(sequence, str):
             try: 
-                sequence = np.array([DNAConstants.NUCLEOTIDES.index(c) for c in sequence])
+                sequence = np.array([ALPHABET.index(c) for c in sequence])
             except ValueError:
                 raise ValueError("Provided sequence contains invalid nucleotide characters.")
 
-        if arr.ndim != 1:
+        if sequence.ndim != 1:
             raise ValueError("Invalid dimension of sequence provided.")
-        if arr.size == 1:
+        if sequence.size == 1:
             raise ValueError("Provided sequence is empty.")
 
         self._sequence_length = len(sequence)

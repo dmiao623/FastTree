@@ -1,6 +1,6 @@
 import numpy as np
 
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 from profile import Profile, profile_distance_uncorrected, profile_weighted_join
 from sequence import Sequence, sequence_distance_uncorrected
@@ -49,6 +49,7 @@ class NodeInfo:
 
         self._up_distance = up_distance
         self._variance = variance
+
         self._label = label
 
     @property
@@ -65,6 +66,8 @@ class NodeInfo:
 
     @property
     def label(self) -> Optional[str]: return self._label
+
+    def set_variance(self, variance: float): self._variance = variance
 
 def nodeinfo_distance(n1: NodeInfo, n2: NodeInfo) -> float:
     """Computes the distance between two NodeInfos.
@@ -90,7 +93,7 @@ def nodeinfo_distance(n1: NodeInfo, n2: NodeInfo) -> float:
 
     return delta - n1.up_distance - n2.up_distance
 
-def nodeinfo_join(n1: NodeInfo, n2: NodeInfo, d: Optional[float] = None) -> NodeInfo:
+def nodeinfo_join(n1: NodeInfo, n2: NodeInfo, d: Optional[float] = None) -> Tuple[NodeInfo, float, float]:
     """Joins two NodeInfos into a single NodeInfo.
 
     A node can be either a Sequence (leaf) or a Profile (internal node). Returned
@@ -102,7 +105,9 @@ def nodeinfo_join(n1: NodeInfo, n2: NodeInfo, d: Optional[float] = None) -> Node
         n2 (NodeInfo): The second node to compare.
 
     Returns:
-        A NodeInfo object with parameters specified above.
+        A Tuple containing a NodeInfo object with parameters specified above,
+            and two floating point integers representing the distance to the
+            left and right children.
     """
 
 
@@ -111,21 +116,17 @@ def nodeinfo_join(n1: NodeInfo, n2: NodeInfo, d: Optional[float] = None) -> Node
     v1 = n1.variance
     v2 = n2.variance
 
+    alpha = np.clip(0.5 + (v2 - v1) / (2 * (v1 + v2)), 0, 1)
+    left_dist = alpha * d
+    right_dist = (1.-alpha) * d
+
     up_distance = (d / 2.) + abs(v1 - v2) / (2. * d)
-    variance = (v1 + v2) / 4. + ((v1 - v2) / (2. * d)) ** 2
+    variance = alpha ** 2 * v1 + (1.-alpha)**2 * v2
 
-    left_dist = 0.5 * d + (abs(v1 - v2) / (2. * d))
-    right_dist = d - left_dist
-
-    left_dist = max(0., left_dist)
-    right_dist = max(0., right_dist)
-
-    w_left = left_dist / d
-    w_right = right_dist / d
     p1 = (n1.profile if n1.profile is not None 
             else Profile.from_aligned_sequence(n1.sequence))
     p2 = (n2.profile if n2.profile is not None 
             else Profile.from_aligned_sequence(n2.sequence))   
 
-    p = profile_weighted_join(p1, p2, w_left, w_right)
-    return NodeInfo(p, up_distance, variance)
+    p = profile_weighted_join(p1, p2, alpha, 1.-alpha)
+    return (NodeInfo(p, up_distance, variance), left_dist, right_dist)
