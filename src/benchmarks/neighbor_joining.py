@@ -31,7 +31,7 @@ def neighbor_joining(alignment: Alignment) -> newick.Node:
 
     # First, construct the distance matrix (which will be stored as
     # a Dict[int, Dict[int, float]]).
-    logging.info(f"Constructing distance matrix for {N} profiles")
+    logger.info(f"Constructing distance matrix for {N} profiles")
     distance_matrix = dict()
     for i, l1 in enumerate(labels):
         distance_matrix[i] = dict()
@@ -43,11 +43,11 @@ def neighbor_joining(alignment: Alignment) -> newick.Node:
                     profile_distance_uncorrected(profiles[l1], profiles[l2])
             else:
                 distance_matrix[i][j] = distance_matrix[j][i]
-        logging.info(f"Computed distances from node {i}")
-    logging.info("Successfully constructed distance matrix")
+        logger.info(f"Computed distances from node {i}")
+    logger.info("Successfully constructed distance matrix")
 
     # Next, do N-2 joins.
-    logging.info("Starting neighbor-joining phase")
+    logger.info("Starting neighbor-joining phase")
     edges = []
     for join in range(N-2):
         n = N - join # The current number of nodes in the tree.
@@ -100,7 +100,7 @@ def neighbor_joining(alignment: Alignment) -> newick.Node:
         # Add the new edges to the tree, and repeat.
         edges.append((mn_i, m, limb_length_i))
         edges.append((mn_j, m, limb_length_j))
-        logging.info(f"Join {join+1} of {N-2} completed")
+        logger.info(f"Join {join+1} of {N-2} completed")
 
     # At this point, the tree has only two nodes. Join them.
     i, j = distance_matrix.keys()
@@ -113,5 +113,5 @@ def neighbor_joining(alignment: Alignment) -> newick.Node:
         nodes[i].length = weight
         nodes[j].add_descendant(nodes[i])
 
-    logging.info("Neighbor-joining algorithm completed")
+    logger.info("Neighbor-joining algorithm completed")
     return nodes[root]

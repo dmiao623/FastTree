@@ -40,5 +40,5 @@ def random_joining(alignment: Alignment) -> newick.Node:
     i, j = active_ids
     nodes[j].add_descendant(nodes[i])
 
-    logging.info("Random-joining algorithm completed")
+    logger.info("Random-joining algorithm completed")
     return nodes[j]

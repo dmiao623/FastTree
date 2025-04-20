@@ -140,7 +140,7 @@ class TreeBuilder:
                  thresh_cp: int=2,
                  refresh_interval: Optional[int]=None,
                  enable_tophits_approx=True):
-        logging.info("Initializing tree builder")
+        logger.info("Initializing tree builder")
         self._num_sequences = alignment.alignment_size
         self._tophits_threshold = thresh_cp*math.isqrt(self._num_sequences)
         self._refresh_interval = refresh_interval if refresh_interval else 2*self._num_sequences
@@ -154,7 +154,7 @@ class TreeBuilder:
             TreeBuilder.Node(i, node_info) for i, node_info in enumerate(node_infos)
         ]
 
-        logging.info("Initializing top-hits lists")
+        logger.info("Initializing top-hits lists")
         self._num_nodes = self._num_sequences
         self._active_ids = set(range(self._num_sequences))
         self._recompute_tophits()
@@ -177,7 +177,7 @@ class TreeBuilder:
 
         self._steps = 0
         self._union_find = UnionFind(2*self._num_sequences)
-        logging.info("Initialization of tree builder completed")
+        logger.info("Initialization of tree builder completed")
 
     def _distance_util(self, nd_id1: NodeID, nd_id2: NodeID):
         """Computes distance between two nodes identified by their IDs. Uses a cached distance
@@ -211,7 +211,7 @@ class TreeBuilder:
 
             nd_id2 (NodeID): Identifier of the second node to be merged.
         """
-        logging.info(f"Joining nodes {nd_id1} and {nd_id2}")
+        logger.info(f"Joining nodes {nd_id1} and {nd_id2}")
 
         assert nd_id1 in self._active_ids
         assert nd_id2 in self._active_ids
@@ -245,7 +245,7 @@ class TreeBuilder:
     def _compute_single_tophits_list(self, nd_id: NodeID, candidates: Optional[List[NodeID]]=None) -> List[int]:
         """Compute the top-hits list of a single node.
         """
-        logging.info(f"Computing top-hits list of node {nd_id}")
+        logger.info(f"Computing top-hits list of node {nd_id}")
         if candidates is None:
             candidates = list(self._active_ids)
         sorted_node_ids = sorted(candidates,
@@ -332,7 +332,7 @@ class TreeBuilder:
             newick.Node: A newick.Node representing the final phylogenetic tree.
         """
 
-        logging.info("Exporting constructed tree")
+        logger.info("Exporting constructed tree")
         assert len(self._active_ids) == 1
         last_remaining = next(iter(self._active_ids))
 
@@ -361,6 +361,6 @@ class TreeBuilder:
         """
 
         for i in range(self._num_sequences - 1):
-            logging.info(f"Step {i+1} of {self._num_sequences-1}")
+            logger.info(f"Step {i+1} of {self._num_sequences-1}")
             self.step()
         return self.export_tree()

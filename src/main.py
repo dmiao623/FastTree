@@ -10,6 +10,7 @@ from benchmarks.neighbor_joining import neighbor_joining
 from benchmarks.random_joining import random_joining
 from math import isqrt
 import newick
+import time
 
 def main():
     parser = argparse.ArgumentParser(description="FastTree implemented in Python")
@@ -39,14 +40,18 @@ def main():
     logger.info(f"Profile matrices of {alignment.alignment_size} sequences "
         f"of length {alignment.alignment_length} successfully constructed")
 
+    time_elapsed = time.perf_counter()
     if args.algo == "nj":
         newick.dump(neighbor_joining(alignment), args.output_file)
-    if args.algo == "random":
+    elif args.algo == "random":
         newick.dump(random_joining(alignment), args.output_file)
     else:
         tree_builder = TreeBuilder(alignment,
                                    refresh_interval=isqrt(alignment.alignment_size))
         newick.dump(tree_builder.build(), args.output_file)
+
+    time_elapsed = time.perf_counter() - time_elapsed
+    logger.info(f"Elapsed time: {time_elapsed:.3f} s")
 
 if __name__ == "__main__":
     main()
