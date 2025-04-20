@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.DEBUG)
 from alignment import Alignment
 from tree_builder import TreeBuilder
 from benchmarks.neighbor_joining import neighbor_joining
+from benchmarks.random_joining import random_joining
 from math import isqrt
 import newick
 
@@ -16,7 +17,7 @@ def main():
                         type=str,
                         help="the algorithm used to construct the tree",
                         required=True,
-                        choices=["nj", "slowtree"])
+                        choices=["nj", "random", "slowtree"])
     parser.add_argument("input_file",
                         type=argparse.FileType("r"),
                         help="the aligned nucleotide sequences in fasta format")
@@ -40,6 +41,8 @@ def main():
 
     if args.algo == "nj":
         newick.dump(neighbor_joining(alignment), args.output_file)
+    if args.algo == "random":
+        newick.dump(random_joining(alignment), args.output_file)
     else:
         tree_builder = TreeBuilder(alignment,
                                    refresh_interval=isqrt(alignment.alignment_size))
