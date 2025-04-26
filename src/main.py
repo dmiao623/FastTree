@@ -1,5 +1,7 @@
 import argparse
 import logging
+import os
+import resource
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -11,6 +13,15 @@ from benchmarks.random_joining import random_joining
 from math import isqrt
 import newick
 import time
+
+def get_peak_mem_mb():
+    # ru_maxrss is in kilobytes on Linux, bytes on macOS
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if os.uname().sysname == 'Darwin':
+        return peak / (1024**2)
+    else:
+        return peak / 1024
+
 
 def main():
     parser = argparse.ArgumentParser(description="FastTree implemented in Python")
@@ -52,6 +63,7 @@ def main():
 
     time_elapsed = time.perf_counter() - time_elapsed
     logger.info(f"Elapsed time: {time_elapsed:.3f} s")
+    logger.info(f"Peak memory usage: {get_peak_mem_mb():.2f} MiB")
 
 if __name__ == "__main__":
     main()
