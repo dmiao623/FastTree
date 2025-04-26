@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import resource
+import sys
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -22,8 +23,10 @@ def get_peak_mem_mb():
     else:
         return peak / 1024
 
-
 def main():
+    sys.setrecursionlimit(10_000)
+    print("Recursion limit:", sys.getrecursionlimit())
+
     parser = argparse.ArgumentParser(description="FastTree implemented in Python")
     parser.add_argument("--algo",
                         type=str,
