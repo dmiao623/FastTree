@@ -11,7 +11,7 @@ UNSIMILARITY_MATRIX = np.array([
     ], dtype=int)
 
 # https://en.wikipedia.org/wiki/FASTA_format#Sequence_representation
-NUCLEIC_ACID_VECTORS = {
+CHARACTER_VECTORS = {
     'A' : utils.normalize(np.array([1, 0, 0, 0])),
     'C' : utils.normalize(np.array([0, 1, 0, 0])),
     'G' : utils.normalize(np.array([0, 0, 1, 0])),

@@ -21,17 +21,20 @@ Add required packages:
 
 ```
 pip install numpy
+pip install blosum
 pip install newick
 ```
 
 ### Usage
 
-First, obtain a multiple alignment of nucleotide sequences in FASTA file format. For example, [a multiple alignment of 16S ribosomal rRNA from the greengenes database](https://greengenes.lbl.gov/Download/Sequence_Data/Fasta_data_files/core_set_aligned.fasta).
+First, obtain a multiple alignment of nucleotide or peptide sequences in FASTA file format. For example, [a multiple alignment of 16S ribosomal rRNA from the greengenes database](https://greengenes.lbl.gov/Download/Sequence_Data/Fasta_data_files/core_set_aligned.fasta).
 
 If desired, run the `sampler.py` script to obtain a smaller subset of this dataset for testing. For example,
 ```
 python src/sampler.py -n 100 core_set_aligned.fasta sampled_core_set.fasta
 ```
+
+Before running the algorithm, ensure that the correct constants file is imported in `constants.py`. `_constants.dna` should be imported when using a dataset of nucleotide sequences, and `_constants.peptide` should be imported when using a dataset of peptide sequences. 
 
 To run the actual algorithm, type
 ```

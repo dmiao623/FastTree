@@ -37,7 +37,7 @@ class Profile:
         
         for col_idx, char in enumerate(aligned_seq):
             try:
-                profile[:, col_idx] = constants.NUCLEIC_ACID_VECTORS[char]
+                profile[:, col_idx] = constants.CHARACTER_VECTORS[char]
                 if not constants.IS_GAP(char):
                     ungapped[col_idx] = 1
             except KeyError:

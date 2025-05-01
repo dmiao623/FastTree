@@ -1,17 +1,13 @@
-import _constants.dna as DNAConstants
+import _constants.dna as ConstantsSource
 
-"""
-[TODO]: Loads one of DNAConstants or ProteinConstants
-"""
+ALPHALEN = len(ConstantsSource.ALPHABET)
 
-ALPHALEN = len(DNAConstants.ALPHABET)
+ALPHABET = ConstantsSource.ALPHABET
 
-ALPHABET = DNAConstants.ALPHABET
+UNSIMILARITY_MATRIX = ConstantsSource.UNSIMILARITY_MATRIX
 
-UNSIMILARITY_MATRIX = DNAConstants.UNSIMILARITY_MATRIX
+CHARACTER_VECTORS = ConstantsSource.CHARACTER_VECTORS
 
-NUCLEIC_ACID_VECTORS = DNAConstants.NUCLEIC_ACID_VECTORS
+CORRECTION = ConstantsSource.CORRECTION
 
-CORRECTION = DNAConstants.CORRECTION
-
-IS_GAP = DNAConstants.IS_GAP
+IS_GAP = ConstantsSource.IS_GAP
