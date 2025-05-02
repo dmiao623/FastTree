@@ -1,6 +1,6 @@
 # SlowTree
 
-A Python implementation of the FastTree algorithm for phylogenetic tree construction.
+A Python implementation of the FastTree algorithm for phylogenetic tree construction. See `writeup.pdf` for background and implementation details.
 
 ### Installation
 
